@@ -1,0 +1,19 @@
+replicaCount: 1
+
+deployment:
+  port: 3000
+  image:
+    repository: docker.io/evanshortiss/neon-kube-previews
+    pullPolicy: Always
+    tag: latest
+  resources:
+    limits:
+      # Burstable up to 1/2 core and 1/2 a gig
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 128Mi
+
+service:
+  port: 80

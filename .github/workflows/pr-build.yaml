@@ -1,0 +1,89 @@
+name: Build Next.js Image
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: pr-container-build
+
+jobs:
+  build-container:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Push
+      uses: docker/build-push-action@v5
+      with:
+        push: true
+        context: elements-application/
+        file: Dockerfile
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:pr-${{ github.event.number }}
+  
+  create-preview-environment:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v7
+
+    # TODO: verify that reusing branch_name, e.g when someone updates their
+    # PR, does not cause this step to error (action idempotency)
+    - name: Create Neon Branch and Compute for PR
+      id: create-branch
+      uses: neondatabase/create-branch-action@v4
+      with:
+        api_key: ${{ secrets.NEON_API_KEY }}
+        project_id: ${{ secrets.NEON_PROJECT_ID }}
+        # branch_name refers to the Neon branch, not a Git branch
+        branch_name: pr-${{ github.event.number }}
+        parent: main
+
+    # We don't want to accidentally print the plaintext database URL since it
+    # contains the datasbe hostname and credentials. Use a mask to avoid this!
+    - name: Mask the Neon Database URL 
+      id: set-db-url
+      run: |
+        masked_db_url=${{ steps.create-branch.outputs.db_url }}
+        echo "::add-mask::$masked_db_url"
+        echo "masked-db-url=$masked_db_url" >> "$GITHUB_OUTPUT"
+    - name: Use that secret output (protected by a mask)
+      run: |
+        echo "the secret number is ${{ steps.sets-a-secret.outputs.secret-number }}"
+    
+    - name: Install the Argo CD CLI
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-darwin-arm64
+        sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+        rm argocd-linux-amd64
+
+    - name: Login to Argo CD
+      # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
+      # slashes. It should only be a hostname, e.g argocd.example.com
+      run: argocd login ${{ secrets.ARGOCD_HOSTNAME }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
+
+    - name: Create the Preview Environment using Argo CD
+      # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
+      # slashes. It should only be a hostname, e.g argocd.example.com
+      run: |
+        argocd app create nkp-pr-${{github.event.number}} \
+        --repo https://github.com/evanshortiss/neon-kube-previews \
+        --revision ${{ steps.branch-name.outputs.current_branch }} \
+        --dest-namespace nkp-pr-${{github.event.number}} \
+        --dest-server https://kubernetes.default.svc \
+        --path helm \
+        --helm-set database.url=${{ steps.set-db-url.outputs.masked-db-url }} \ image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }} image.tag=pr-${{ github.event.number }} namespace=nkp-pr-${{ github.event.number }} \
+        --self-heal \
+        --auto-prune 
+
