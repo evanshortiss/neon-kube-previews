@@ -1,4 +1,3 @@
-
 argocd app create nkp-pr-manual \
 --repo https://github.com/evanshortiss/neon-kube-previews \
 --revision main \
@@ -8,4 +7,5 @@ argocd app create nkp-pr-manual \
 --helm-set database.url=$DATABASE_URL --helm-set image.tag=latest --helm-set namespace=nkp-pr-manual \
 --self-heal \
 --sync-policy auto \
---auto-prune
+--auto-prune \
+--sync-option 'CreateNamespace=true'
