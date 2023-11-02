@@ -27,7 +27,7 @@ jobs:
       with:
         push: true
         context: elements-application/
-        file: Containerfile
+        file: elements-application/Containerfile
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:pr-${{ github.event.number }}
   
   create-preview-environment:
