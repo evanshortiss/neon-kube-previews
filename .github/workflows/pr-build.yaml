@@ -86,5 +86,6 @@ jobs:
         --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \ image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }} image.tag=pr-${{ github.event.number }} namespace=nkp-pr-${{ github.event.number }} \
         --self-heal \
         --sync-option 'CreateNamespace=true' \
+        --sync-policy auto \
         --auto-prune 
 
