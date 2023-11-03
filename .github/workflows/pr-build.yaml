@@ -32,6 +32,8 @@ jobs:
   
   create-preview-environment:
     runs-on: ubuntu-latest
+    permissions: 
+      pull-requests: write 
 
     steps:
     - name: Get branch name
