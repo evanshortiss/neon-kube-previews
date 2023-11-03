@@ -32,6 +32,7 @@ jobs:
   
   create-preview-environment:
     runs-on: ubuntu-latest
+    needs: build-container
     permissions: 
       pull-requests: write 
 
@@ -97,4 +98,4 @@ jobs:
       if: steps.generate-ingress-domain.outputs.domain
       with:
         message: |
-          Preview URL :rocket: : ${{ steps.generate-ingress-domain.outputs.domain }}
+          Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
