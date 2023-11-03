@@ -87,6 +87,7 @@ jobs:
         --self-heal \
         --sync-option 'CreateNamespace=true' \
         --sync-policy auto \
+        --upsert \
         --auto-prune 
 
     - name: Comment on Pull Request
