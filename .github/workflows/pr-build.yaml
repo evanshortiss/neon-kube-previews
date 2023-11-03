@@ -63,8 +63,10 @@ jobs:
 
     - name: Prepare ngrok preview URL
       id: generate-ingress-domain
-      if: ${{ secrets.NGROK_SUBDOMAIN }}
-      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ secrets.NGROK_SUBDOMAIN }}"
+      if: env.NGROK_SUBDOMAIN
+      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ $NGROK_SUBDOMAIN }}"
+      env:
+        NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
 
 
     - name: Create the Preview Environment using Argo CD
