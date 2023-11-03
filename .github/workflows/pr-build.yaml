@@ -50,18 +50,6 @@ jobs:
         branch_name: pr-${{ github.event.number }}
         parent: main
 
-    # We don't want to accidentally print the plaintext database URL since it
-    # contains the datasbe hostname and credentials. Use a mask to avoid this!
-    - name: Mask the Neon Database URL 
-      id: set-db-url
-      run: |
-        masked_db_url=${{ steps.create-branch.outputs.db_url }}
-        echo "::add-mask::$masked_db_url"
-        echo "masked-db-url=$masked_db_url" >> "$GITHUB_OUTPUT"
-    - name: Use that secret output (protected by a mask)
-      run: |
-        echo "the secret number is ${{ steps.sets-a-secret.outputs.secret-number }}"
-    
     - name: Install the Argo CD CLI
       run: |
         curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64
@@ -72,6 +60,12 @@ jobs:
       # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
       # slashes. It should only be a hostname, e.g argocd.example.com
       run: argocd login ${{ secrets.ARGOCD_HOSTNAME }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
+
+    - name: Prepare ngrok preview URL
+      id: generate-ingress-domain
+      if: secrets.NGROK_SUBDOMAIN
+      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ secrets.NGROK_SUBDOMAIN }}"
+
 
     - name: Create the Preview Environment using Argo CD
       # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
@@ -87,8 +81,15 @@ jobs:
         --helm-set image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }} \
         --helm-set image.tag=pr-${{ github.event.number }} \
         --helm-set namespace=nkp-pr-${{ github.event.number }} \
+        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}"
         --self-heal \
         --sync-option 'CreateNamespace=true' \
         --sync-policy auto \
         --auto-prune 
 
+    - name: Comment on Pull Request
+      uses: thollander/actions-comment-pull-request@v2
+      if: steps.generate-ingress-domain.outputs.domain
+      with:
+        message: |
+          Preview URL :rocket: : ${{ steps.generate-ingress-domain.outputs.domain }}

@@ -17,3 +17,5 @@ deployment:
 
 service:
   port: 80
+
+ingress: {}

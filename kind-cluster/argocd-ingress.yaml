@@ -6,7 +6,8 @@ metadata:
 spec:
   ingressClassName: ngrok
   rules:
-      # Value obtained from Cloud Edge > Domains in the ngrok dashboard 
+      # Value obtained from Cloud Edge > Domains in the ngrok dashboard, e.g
+      # a domain string such as argocd.neon.ngrok.app
     - host: REPLACE_THIS_WITH_A_DOMAIN
       http:
         paths:

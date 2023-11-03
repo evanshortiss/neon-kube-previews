@@ -1,0 +1,19 @@
+{{ if and .Values.ingress.domain (ne .Values.ingress.domain "") }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nkp-ingress
+spec:
+  ingressClassName: ngrok
+  rules:
+    - host: {{ .Values.ingress.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: neon-kube-previews
+                port:
+                  number: {{ .Values.service.port }}
+{{ end }}
