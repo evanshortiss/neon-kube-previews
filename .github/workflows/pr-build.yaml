@@ -83,7 +83,7 @@ jobs:
         --helm-set image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }} \
         --helm-set image.tag=pr-${{ github.event.number }} \
         --helm-set namespace=nkp-pr-${{ github.event.number }} \
-        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}"
+        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
         --self-heal \
         --sync-option 'CreateNamespace=true' \
         --sync-policy auto \
