@@ -64,7 +64,7 @@ jobs:
     - name: Prepare ngrok preview URL
       id: generate-ingress-domain
       if: env.NGROK_SUBDOMAIN
-      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ $NGROK_SUBDOMAIN }}"
+      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ env.NGROK_SUBDOMAIN }}"
       env:
         NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
 
