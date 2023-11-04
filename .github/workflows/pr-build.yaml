@@ -5,9 +5,6 @@ on:
     branches:
       - '*'
 
-concurrency:
-  group: pr-container-build
-
 jobs:
   build-container:
     runs-on: ubuntu-latest
@@ -28,21 +25,29 @@ jobs:
         push: true
         context: elements-application/
         file: elements-application/Containerfile
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:pr-${{ github.event.number }}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.event.pull_request.head.sha }}
   
   create-preview-environment:
     runs-on: ubuntu-latest
+
+    # Wait for the docker build and push to complete prior to running this job
     needs: build-container
+
+    # This permission is required to comment with the preview URL on the PR
     permissions: 
       pull-requests: write 
 
     steps:
+
+    # The current branch is passed to Argo CD to ensure the correct manifests
+    # are used when deploying the application on Kubernetes
     - name: Get branch name
       id: branch-name
       uses: tj-actions/branch-names@v7
 
-    # TODO: verify that reusing branch_name, e.g when someone updates their
-    # PR, does not cause this step to error (action idempotency)
+    # Create a new branch on Neon using the PR number in the branch name. This
+    # operation is idempotent, so it's effectively a no-op if more commits are
+    # push to the original PR
     - name: Create Neon Branch and Compute for PR
       id: create-branch
       uses: neondatabase/create-branch-action@v4
@@ -65,16 +70,19 @@ jobs:
       run: argocd login ${{ secrets.ARGOCD_HOSTNAME }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
 
     - name: Prepare ngrok preview URL
-      id: generate-ingress-domain
+      # If NGROK_SUBDOMAIN is set in secrets it's assumed that a preview
+      # URL should be generated and posted as a comment on the PR. 
       if: env.NGROK_SUBDOMAIN
+      id: generate-ingress-domain
       run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ env.NGROK_SUBDOMAIN }}"
       env:
         NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
 
-
     - name: Create the Preview Environment using Argo CD
-      # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
-      # slashes. It should only be a hostname, e.g argocd.example.com
+      # This command will perform an upsert of an Argo CD application, i.e create
+      # a new applicatin, or update an existing application associated with this
+      # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
+      # where {{number}} is the PR number.
       run: |
         argocd app create nkp-pr-${{github.event.number}} \
         --repo https://github.com/evanshortiss/neon-kube-previews \
@@ -83,8 +91,8 @@ jobs:
         --dest-server https://kubernetes.default.svc \
         --path helm \
         --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
-        --helm-set image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }} \
-        --helm-set image.tag=pr-${{ github.event.number }} \
+        --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
+        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }}
         --helm-set namespace=nkp-pr-${{ github.event.number }} \
         --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
         --self-heal \
