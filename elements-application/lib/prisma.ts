@@ -1,13 +1,17 @@
 import { PrismaClient } from '@prisma/client';
 import { get } from 'env-var'
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const NODE_ENV = get('NODE_ENV').default('development').asEnum(['development', 'production'])
-const IS_PRODUCTION = NODE_ENV === 'production'
+const NEXT_PHASE = get('NEXT_PHASE').asString()
+
+const isProductionEnv = NODE_ENV === 'production'
+const isBuildingProduction = NEXT_PHASE === PHASE_PRODUCTION_BUILD
 
 // This will throw an error if the DATABASE_URL environment variable is missing
-// at runtime i.e when NODE_ENV=production
-const DATABASE_URL = get('DATABASE_URL').required(IS_PRODUCTION).asUrlString()
+// at runtime, but will not throw when compiling a production build using next
+const DATABASE_URL = get('DATABASE_URL').required(isProductionEnv && !isBuildingProduction).asUrlString()
 
 export const prisma =
   globalForPrisma.prisma ||
@@ -21,4 +25,4 @@ export const prisma =
     },
   });
 
-if (NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (isProductionEnv) globalForPrisma.prisma = prisma;

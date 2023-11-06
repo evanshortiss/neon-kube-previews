@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-A Kubernetes cluster with Argo CD installed and exposed via a public ingress.
+A Kubernetes cluster with Argo CD installed and exposed via an HTTPS ingress.
 
 ## Usage
 
@@ -22,3 +22,13 @@ your new repository's settings screen:
 * `ARGOCD_HOSTNAME` - Strictly the hostname, e.g `argocd.foo.bar` without `https`.
 * `ARGOCD_USERNAME` - A valid Argo CD username. You can could use `admin` if you're prototyping.
 * `ARGOCD_PASSWORD` - The password associated with the given `ARGOCD_USERNAME`.
+
+The following secret is optional. It's used to generate a preview URL
+provided by [ngrok](https://ngrok.io), and assumes you've installed the 
+[ngrok ingress controller](https://ngrok.com/blog-post/ngrok-k8s) on the
+cluster where Argo CD is deploying your application.
+
+*Note: If you have an alternative ingress solution configured on your Kubernetes cluster do not set this secret. Instead edit the Helm Chart to use your chosen ingress solution.*
+
+* `NGROK_SUBDOMAIN` - Used to generate a preview URL with the format `pr-$NUMBER.$NGROK_SUBDOMAIN`, e.g `pr-1.evanshortiss.ngrok.app`
+

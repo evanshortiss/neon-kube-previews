@@ -6,6 +6,7 @@ kubectl config use-context kind-argocd-previews
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# Patch Argo CD to disable HTTPS, since ingress will take care of it
-kubectl patch cm argocd-cmd-params-cm -n argocd --type merge -p '{"data": {"server.insecure": "true"}}'
+# Patch Argo CD to stop ngrok ingress health from causing the Argo CD
+# application to get stuck in a "progressing" status
+kubectl patch configmap argocd-cm -n argocd --patch "$(cat argocd-cm.patch.yaml)"
 kubectl rollout restart deployment/argocd-server -n argocd
