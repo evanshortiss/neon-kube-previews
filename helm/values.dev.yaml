@@ -9,7 +9,7 @@ deployment:
   resources:
     limits:
       # Lower resources for development vs production
-      cpu: 250m
+      cpu: 200m
       memory: 512Mi
     requests:
       cpu: 100m
