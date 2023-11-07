@@ -6,7 +6,7 @@ deployment:
   image:
     repository: docker.io/evanshortiss/neon-kube-previews
     pullPolicy: Always
-    tag: latest
+    tag: 43f65082c04f0e2e46879f334e19028832fcf120
   resources:
     limits:
       # Burstable up to 1/2 core and 1/2 a gig
@@ -15,9 +15,7 @@ deployment:
     requests:
       cpu: 250m
       memory: 512Mi
-
 service:
   port: 80
-
 ingress:
   domain: neon-kube-previews.ngrok.app
