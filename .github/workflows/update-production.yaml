@@ -50,7 +50,7 @@ jobs:
       uses: peter-evans/create-pull-request@v5
       id: cpr
       with:
-        title: ${{ github.event.inputs.message }}
+        title: Update Production (${{ github.sha }})
         branch: release-${{ github.sha }}
         commit-message: update backend image tag to ${{ github.sha }}
 
