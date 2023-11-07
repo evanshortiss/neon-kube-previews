@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nkp-elements
+spec:
+  destination:
+    name: ''
+    namespace: nkp-elements
+    server: 'https://kubernetes.default.svc'
+  source:
+    path: helm
+    repoURL: 'https://github.com/evanshortiss/neon-kube-previews/'
+    targetRevision: HEAD
+    helm:
+      valueFiles:
+        - values.yaml
+      values: database.url='postgres://$USER:$PASSWORD@$HOSTNAME/$DATABASE'
+  sources: []
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
