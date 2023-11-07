@@ -145,9 +145,8 @@ jobs:
       if: steps.generate-ingress-domain.outputs.domain
       with:
         message: |
-          Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
-          Argo CD URL: https://${{ secrets.ARGOCD_HOSTNAME }}/applications/argocd/nkp-pr-${{github.event.number}}
-          Container Image URL: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.event.pull_request.head.sha }}
+          :rocket: Preview URL: https://${{ steps.generate-ingress-domain.outputs.domain }}
+          :octopus: Argo CD URL: https://${{ secrets.ARGOCD_HOSTNAME }}/applications/argocd/nkp-pr-${{github.event.number}}
         # Comment tag allows the action to update an existing comment, if one
         # exists. This prevents a flood of similar comments
         comment_tag: preview-url
