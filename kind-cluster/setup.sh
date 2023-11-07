@@ -17,20 +17,20 @@ rm -f $LOG_FILE
 
 # Verify that required tools are installed
 for pkg in "${required_pkgs[@]}"; do
-    has_pkg=$(which $pkg)
+  has_pkg=$(which $pkg)
 
-    if [ -z "${has_pkg}" ]; then
-        echo "$pkg is was not found. Please install $pkg"
-        exit 1
-    fi
+  if [ -z "${has_pkg}" ]; then
+    echo "$pkg is was not found. Please install $pkg"
+    exit 1
+  fi
 done
 
 # Verify that required environment variables are set
 for var in "${required_vars[@]}"; do
-    if [ -z "${var}" ]; then
-        echo "Please set $var when running the script, e.g \"$var=value_goes_here ./setup.sh\""
-        exit 1
-    fi
+  if [[ -z "${!var}" ]]; then
+    echo "Please set $var when running the script, e.g \"$var=value_goes_here ./setup.sh\""
+    exit 1
+  fi
 done
 
 # Check if the cluster already exists, and if so exit with a error
