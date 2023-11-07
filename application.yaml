@@ -14,12 +14,13 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-      values: database.url='postgres://$USER:$PASSWORD@$HOSTNAME/$DATABASE'
+      values: >-
+        { database: { url:
+        "postgres://$USER:$PASS@$HOST/$DATABASE"
+        } }
   sources: []
   project: default
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    automated: null
     syncOptions:
       - CreateNamespace=true
