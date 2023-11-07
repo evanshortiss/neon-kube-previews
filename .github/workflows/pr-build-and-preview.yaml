@@ -6,9 +6,31 @@ on:
       - '*'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      elements-application: ${{ steps.changes.outputs.elements-application }}
+    
+
+    steps:
+      - name: Log Event
+        run: echo "${{ toJson(github.event) }}"
+
+      - uses: actions/checkout@v3
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            elements-application:
+              - 'elements-application/**'
+
   build-container:
     runs-on: ubuntu-latest
+    needs: changes
 
+    # Only build the container image if the application source has changed,
+    # or a build is explicitly requested via a dispatch event
+    if: needs.changes.outputs.elements-application == 'true' || github.event_name == 'workflow_dispatch'
     steps:
     - name: Checkout source code
       uses: actions/checkout@v3
@@ -32,6 +54,10 @@ jobs:
 
     # Wait for the docker build and push to complete prior to running this job
     needs: build-container
+
+    # Only build the container image if the application source has changed,
+    # or a build is explicitly requested via a dispatch event
+    if: needs.changes.outputs.elements-application == 'true' || github.event_name == 'workflow_dispatch'
 
     # This permission is required to comment with the preview URL on the PR
     permissions: 
@@ -108,6 +134,8 @@ jobs:
       with:
         message: |
           Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
+          Argo CD URL: https://${{ secrets.ARGOCD_HOSTNAME }}/applications/argocd/nkp-pr-${{github.event.number}}
+          Container Image URL: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.event.pull_request.head.sha }}
         # Comment tag allows the action to update an existing comment, if one
         # exists. This prevents a flood of similar comments
         comment_tag: preview-url
