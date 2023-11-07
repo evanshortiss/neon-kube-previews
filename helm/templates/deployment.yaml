@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: neon-kube-previews
 spec:
-  replicas: 1
+  replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
       app: neon-kube-previews
