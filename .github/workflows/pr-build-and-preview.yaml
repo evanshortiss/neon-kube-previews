@@ -89,7 +89,7 @@ jobs:
         --revision ${{ steps.branch-name.outputs.current_branch }} \
         --dest-namespace nkp-pr-${{github.event.number}} \
         --dest-server https://kubernetes.default.svc \
-        --values helm/values.dev.yaml
+        --values helm/values.dev.yaml \
         --path helm \
         --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
         --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
