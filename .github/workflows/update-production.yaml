@@ -1,6 +1,7 @@
 name: Deploy Production
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'main'
@@ -30,7 +31,7 @@ jobs:
   update-production-tag:
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Install yq
       run: |
         sudo curl -L https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_amd64 -o /usr/local/bin/yq
