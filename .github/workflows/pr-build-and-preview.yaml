@@ -1,0 +1,110 @@
+name: Build Container Image and Preview Environment
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build-container:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Push
+      uses: docker/build-push-action@v5
+      with:
+        push: true
+        context: elements-application/
+        file: elements-application/Containerfile
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.event.pull_request.head.sha }}
+  
+  create-preview-environment:
+    runs-on: ubuntu-latest
+
+    # Wait for the docker build and push to complete prior to running this job
+    needs: build-container
+
+    # This permission is required to comment with the preview URL on the PR
+    permissions: 
+      pull-requests: write 
+
+    steps:
+
+    # The current branch is passed to Argo CD to ensure the correct manifests
+    # are used when deploying the application on Kubernetes
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v7
+
+    # Create a new branch on Neon using the PR number in the branch name. This
+    # operation is idempotent, so it's effectively a no-op if more commits are
+    # push to the original PR
+    - name: Create Neon Branch and Compute for PR
+      id: create-branch
+      uses: neondatabase/create-branch-action@v4
+      with:
+        api_key: ${{ secrets.NEON_API_KEY }}
+        project_id: ${{ secrets.NEON_PROJECT_ID }}
+        # branch_name refers to the Neon branch, not a Git branch
+        branch_name: pr-${{ github.event.number }}
+        parent: main
+
+    - name: Install the Argo CD CLI
+      run: |
+        curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/download/v2.8.4/argocd-linux-amd64
+        sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+        rm argocd-linux-amd64
+
+    - name: Login to Argo CD
+      # Note that the ARGO_CD_HOSTNAME must not contain a protocol or trailing
+      # slashes. It should only be a hostname, e.g argocd.example.com
+      run: argocd login ${{ secrets.ARGOCD_HOSTNAME }} --username ${{ secrets.ARGOCD_USERNAME }} --password ${{ secrets.ARGOCD_PASSWORD }}
+
+    - name: Prepare ngrok preview URL
+      # If NGROK_SUBDOMAIN is set in secrets it's assumed that a preview
+      # URL should be generated and posted as a comment on the PR. 
+      if: env.NGROK_SUBDOMAIN
+      id: generate-ingress-domain
+      run: echo "::set-output name=domain::pr-${{ github.event.number }}.${{ env.NGROK_SUBDOMAIN }}"
+      env:
+        NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
+
+    - name: Create the Preview Environment using Argo CD
+      # This command will perform an upsert of an Argo CD application, i.e create
+      # a new applicatin, or update an existing application associated with this
+      # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
+      # where {{number}} is the PR number.
+      run: |
+        argocd app create nkp-pr-${{github.event.number}} \
+        --repo https://github.com/${{ github.repository_owner }}/neon-kube-previews \
+        --revision ${{ steps.branch-name.outputs.current_branch }} \
+        --dest-namespace nkp-pr-${{github.event.number}} \
+        --dest-server https://kubernetes.default.svc \
+        --values helm/values.dev.yaml
+        --path helm \
+        --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
+        --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
+        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }} \
+        --helm-set namespace=nkp-pr-${{ github.event.number }} \
+        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
+        --self-heal \
+        --sync-option 'CreateNamespace=true' \
+        --sync-policy auto \
+        --upsert \
+        --auto-prune
+
+    - name: Comment on Pull Request
+      uses: thollander/actions-comment-pull-request@v2
+      if: steps.generate-ingress-domain.outputs.domain
+      with:
+        message: |
+          Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
