@@ -108,3 +108,6 @@ jobs:
       with:
         message: |
           Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
+        # Comment tag allows the action to update an existing comment, if one
+        # exists. This prevents a flood of similar comments
+        comment_tag: preview-url
