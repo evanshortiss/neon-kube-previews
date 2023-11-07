@@ -28,7 +28,7 @@ jobs:
         # Always do a full build if the PR is newly opened, or the app 
         # source was modified, or this run is due to dispatch
         run: |
-          echo "build-and-deploy=${{ steps.changes.outputs.elements-application || github.event.action == 'opened' || github.event_name == 'workflow_dispatch' }}" >> "$GITHUB_OUTPUT"
+          echo "build-and-deploy=${{ steps.changes.outputs.elements-application || github.event.action == 'opened' || github.event.action == 'reopened' || github.event_name == 'workflow_dispatch' }}" >> "$GITHUB_OUTPUT"
 
 
   build-container:
