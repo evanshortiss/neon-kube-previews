@@ -29,9 +29,12 @@ jobs:
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.sha }},${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:latest
 
   update-production-tag:
+    needs: build-container
     runs-on: ubuntu-latest
+    
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout source code
+      uses: actions/checkout@v3
 
     - name: Install yq
       run: |
