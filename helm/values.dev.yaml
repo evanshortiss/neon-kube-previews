@@ -10,10 +10,10 @@ deployment:
     limits:
       # Lower resources for development vs production
       cpu: 250m
-      memory: 256Mi
+      memory: 512Mi
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 256Mi
 
 service:
   port: 80
