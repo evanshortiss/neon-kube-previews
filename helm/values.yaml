@@ -4,9 +4,9 @@ deployment:
   replicaCount: 2
   port: 3000
   image:
-    repository: evanshortiss/neon-kube-previews
+    repository: docker.io/evanshortiss/neon-kube-previews
     pullPolicy: Always
-    tag: 8fb8866310dbaad7c117c81b98cac99913b9e45e
+    tag: ab1205ac654a0db2f1710f97afa6a9058d30898e
   resources:
     limits:
       # Burstable up to 1/2 core and 1/2 a gig
