@@ -19,3 +19,6 @@ service:
   port: 80
 ingress:
   domain: neon-kube-previews.ngrok.app
+labels:
+  app: neon-kube-previews
+  environment: "production"

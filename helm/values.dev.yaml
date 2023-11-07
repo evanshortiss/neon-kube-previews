@@ -17,5 +17,9 @@ deployment:
 
 service:
   port: 80
-
+labels:
+  app: neon-kube-previews
+  environment: "development"
 ingress: {}
+
+

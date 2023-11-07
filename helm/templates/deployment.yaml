@@ -2,15 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: neon-kube-previews
+  labels: {{ .Values.labels | toYaml | nindent 4 }}
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:
     matchLabels:
-      app: neon-kube-previews
+      app: {{ .Values.labels.app }}
+      labels: {{ .Values.labels | toYaml | nindent 4 }}
   template:
     metadata:
-      labels:
-        app: neon-kube-previews
+      labels: {{ .Values.labels | toYaml | nindent 4 }}
     spec:
       containers:
       - name: neon-kube-previews
