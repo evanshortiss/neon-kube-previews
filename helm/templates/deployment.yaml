@@ -6,9 +6,7 @@ metadata:
 spec:
   replicas: {{ .Values.deployment.replicaCount }}
   selector:
-    matchLabels:
-      app: {{ .Values.labels.app }}
-      labels: {{ .Values.labels | toYaml | nindent 8 }}
+    matchLabels: {{ .Values.labels | toYaml | nindent 6 }}
   template:
     metadata:
       labels: {{ .Values.labels | toYaml | nindent 8 }}
