@@ -43,8 +43,8 @@ jobs:
 
     - name: Update values.yaml
       run: |
-        'yq -i e ".deployment.image.repository = \"${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews\"" helm/values.yaml'
-        'yq -i e ".deployment.image.tag = \"${{ github.sha }}\"" helm/values.yaml'
+        yq -i e ".deployment.image.repository = \"${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews\"" helm/values.yaml
+        yq -i e ".deployment.image.tag = \"${{ github.sha }}\"" helm/values.yaml
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v5
