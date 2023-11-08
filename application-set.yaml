@@ -31,9 +31,6 @@ spec:
           # nkp-pr-{{number}}.{{ingress.domain}}
           values: >-
             {
-              database: {
-                url: "postgres://user:password@hostname/neondb"
-              },
               deployment: {
                 image: {
                   tag: {{head_sha}}
