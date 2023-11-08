@@ -24,7 +24,7 @@ spec:
         targetRevision: '{{head_sha}}'
         helm:
           valueFiles:
-          - values.yaml
+          - values.dev.yaml
           # The database.url value will be replaced by CI once it creates the
           # Neon preview branch. Replace ingress.domain with your desired
           # hostname. Previews use the following URL structure:
@@ -34,8 +34,13 @@ spec:
               database: {
                 url: "postgres://user:password@hostname/neondb"
               },
+              deployment: {
+                image: {
+                  tag: {{head_sha}}
+                }
+              },
               ingress: {
-                domain: "evanshortiss.ngrok.app"
+                domain: "pr-{{number}}.nkp.ngrok.app"
               }
             }
       project: default
@@ -47,4 +52,4 @@ spec:
           - CreateNamespace=true
       destination:
         server: https://kubernetes.default.svc
-        namespace: 'nkp-{{pr}}-{{number}}'
+        namespace: 'nkp-pr-{{number}}'
