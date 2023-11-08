@@ -15,6 +15,7 @@ deployment:
       cpu: 100m
       memory: 256Mi
 
+database: {}
 service:
   port: 80
 labels:

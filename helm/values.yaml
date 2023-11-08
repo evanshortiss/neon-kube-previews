@@ -22,3 +22,4 @@ ingress:
 labels:
   app: neon-kube-previews
   environment: "production"
+database: {}
