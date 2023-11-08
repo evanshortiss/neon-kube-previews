@@ -4,6 +4,9 @@ metadata:
   name: nkp-previews
   namespace: argocd
 spec:
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.source.helm.values
   generators:
   - pullRequest:
       github:
@@ -47,8 +50,8 @@ spec:
       project: default
       syncPolicy:
         automated:
-          prune: true
-          selfHeal: true
+          prune: false
+          selfHeal: false
         syncOptions:
           - CreateNamespace=true
       destination:
