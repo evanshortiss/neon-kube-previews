@@ -16,7 +16,7 @@ spec:
         - values.yaml
       values: >-
         { database: { url:
-        "postgres://$USER:$PASS@$HOST/$DATABASE"
+        "$DATABASE_URL"
         } }
   sources: []
   project: default

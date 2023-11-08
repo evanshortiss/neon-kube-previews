@@ -34,7 +34,6 @@ jobs:
           echo "github.event_name == 'workflow_dispatch': ${{github.event_name == 'workflow_dispatch'}}"
           echo "build-and-deploy=${{ steps.changes.outputs.elements-application == 'true' || github.event.action == 'opened' || github.event.action == 'reopened' || github.event_name == 'workflow_dispatch' }}" >> "$GITHUB_OUTPUT"
 
-
   build-container:
     runs-on: ubuntu-latest
     needs: changes
@@ -116,29 +115,36 @@ jobs:
       env:
         NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
 
-    - name: Create the Preview Environment using Argo CD
-      # This command will perform an upsert of an Argo CD application, i.e create
-      # a new applicatin, or update an existing application associated with this
-      # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
-      # where {{number}} is the PR number.
+    # - name: Create the Preview Environment using Argo CD
+    #   # This command will perform an upsert of an Argo CD application, i.e create
+    #   # a new applicatin, or update an existing application associated with this
+    #   # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
+    #   # where {{number}} is the PR number.
+    #   run: |
+    #     argocd app create nkp-pr-${{github.event.number}} \
+    #     --repo https://github.com/${{ github.repository_owner }}/neon-kube-previews \
+    #     --revision ${{ steps.branch-name.outputs.current_branch }} \
+    #     --dest-namespace nkp-pr-${{github.event.number}} \
+    #     --dest-server https://kubernetes.default.svc \
+    #     --values values.dev.yaml \
+    #     --path helm \
+    #     --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
+    #     --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
+    #     --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }} \
+    #     --helm-set namespace=nkp-pr-${{ github.event.number }} \
+    #     --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
+    #     --self-heal \
+    #     --sync-option 'CreateNamespace=true' \
+    #     --sync-policy auto \
+    #     --upsert \
+    #     --auto-prune
+
+    - name: Update the Preview Environment with the Neon Branch URL
       run: |
-        argocd app create nkp-pr-${{github.event.number}} \
-        --repo https://github.com/${{ github.repository_owner }}/neon-kube-previews \
-        --revision ${{ steps.branch-name.outputs.current_branch }} \
-        --dest-namespace nkp-pr-${{github.event.number}} \
-        --dest-server https://kubernetes.default.svc \
-        --values values.dev.yaml \
-        --path helm \
+        argocd app set nkp-pr-${{github.event.number}} \
         --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
         --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
-        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }} \
-        --helm-set namespace=nkp-pr-${{ github.event.number }} \
-        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
-        --self-heal \
-        --sync-option 'CreateNamespace=true' \
-        --sync-policy auto \
-        --upsert \
-        --auto-prune
+        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }}
 
     - name: Comment on Pull Request
       uses: thollander/actions-comment-pull-request@v2
