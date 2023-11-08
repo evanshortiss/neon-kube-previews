@@ -1,6 +1,6 @@
 
 deployment:
-  replicaCount: 1
+  replicaCount: 2
   port: 3000
   image:
     repository: docker.io/evanshortiss/neon-kube-previews
