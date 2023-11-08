@@ -44,3 +44,16 @@ your preview environment count.
 
 * `NGROK_SUBDOMAIN` - Used to generate a preview URL with the format `pr-$NUMBER.$NGROK_SUBDOMAIN`, e.g `pr-1.evanshortiss.ngrok.app`
 
+## Production Deployment
+
+Configure a production deployment by applying the provided `application.yaml`:
+
+```bash
+# Set the database URL
+export DATABASE_URL='REPLACE_THIS'
+
+# Inject database URL into yaml and apply in argocd namespace
+envsubst < ./application.yaml | kubectl apply -n argocd -f -
+```
+
+_Note: This `application.yaml` passes the `DATABASE_URL` environment variable as a value to a Secret. In a production environment, consider using a solution such as [Sealed Secret](https://github.com/bitnami-labs/sealed-secrets#sealed-secrets-for-kubernetes)._

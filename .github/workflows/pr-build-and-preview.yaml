@@ -9,9 +9,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      elements-application: ${{ steps.changes.outputs.elements-application }}
+      build-and-deploy: ${{ steps.evaluate.outputs.build-and-deploy }}
     
-
     steps:
       - name: Log Event
         run: echo "${{ toJson(github.event) }}"
@@ -24,13 +23,24 @@ jobs:
             elements-application:
               - 'elements-application/**'
 
+      - name: Set Deployment Requirement
+        id: evaluate
+        # Always do a full build if the PR is newly opened, or the app 
+        # source was modified, or this run is due to dispatch
+        run: |
+          echo "steps.changes.outputs.elements-application: ${{steps.changes.outputs.elements-application}}"
+          echo "github.event.action == 'opened': ${{github.event.action == 'opened'}}"
+          echo "github.event.action == 'reopened': ${{github.event.action == 'reopened'}}"
+          echo "github.event_name == 'workflow_dispatch': ${{github.event_name == 'workflow_dispatch'}}"
+          echo "build-and-deploy=${{ steps.changes.outputs.elements-application == 'true' || github.event.action == 'opened' || github.event.action == 'reopened' || github.event_name == 'workflow_dispatch' }}" >> "$GITHUB_OUTPUT"
+
   build-container:
     runs-on: ubuntu-latest
     needs: changes
 
     # Only build the container image if the application source has changed,
     # or a build is explicitly requested via a dispatch event
-    if: needs.changes.outputs.elements-application == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.changes.outputs.build-and-deploy == 'true'
     steps:
     - name: Checkout source code
       uses: actions/checkout@v3
@@ -55,9 +65,10 @@ jobs:
     # Wait for the docker build and push to complete prior to running this job
     needs: build-container
 
-    # Only build the container image if the application source has changed,
-    # or a build is explicitly requested via a dispatch event
-    if: needs.changes.outputs.elements-application == 'true' || github.event_name == 'workflow_dispatch'
+    # Only push changes to Argo CD and the PR comment if necessary. If the
+    # application code has not changed, simply skip this step since Argo CD
+    # will fetch the new Kubernetes manifests in helm/ automatically
+    if: needs.changes.outputs.build-and-deploy == 'true'
 
     # This permission is required to comment with the preview URL on the PR
     permissions: 
@@ -104,38 +115,44 @@ jobs:
       env:
         NGROK_SUBDOMAIN: ${{ secrets.NGROK_SUBDOMAIN }} 
 
-    - name: Create the Preview Environment using Argo CD
-      # This command will perform an upsert of an Argo CD application, i.e create
-      # a new applicatin, or update an existing application associated with this
-      # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
-      # where {{number}} is the PR number.
+    # - name: Create the Preview Environment using Argo CD
+    #   # This command will perform an upsert of an Argo CD application, i.e create
+    #   # a new applicatin, or update an existing application associated with this
+    #   # PR. The Argo CD application and created ingress use the format nkp-pr-{{number}}
+    #   # where {{number}} is the PR number.
+    #   run: |
+    #     argocd app create nkp-pr-${{github.event.number}} \
+    #     --repo https://github.com/${{ github.repository_owner }}/neon-kube-previews \
+    #     --revision ${{ steps.branch-name.outputs.current_branch }} \
+    #     --dest-namespace nkp-pr-${{github.event.number}} \
+    #     --dest-server https://kubernetes.default.svc \
+    #     --values values.dev.yaml \
+    #     --path helm \
+    #     --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
+    #     --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
+    #     --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }} \
+    #     --helm-set namespace=nkp-pr-${{ github.event.number }} \
+    #     --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
+    #     --self-heal \
+    #     --sync-option 'CreateNamespace=true' \
+    #     --sync-policy auto \
+    #     --upsert \
+    #     --auto-prune
+
+    - name: Update the Preview Environment with the Neon Branch URL
       run: |
-        argocd app create nkp-pr-${{github.event.number}} \
-        --repo https://github.com/${{ github.repository_owner }}/neon-kube-previews \
-        --revision ${{ steps.branch-name.outputs.current_branch }} \
-        --dest-namespace nkp-pr-${{github.event.number}} \
-        --dest-server https://kubernetes.default.svc \
-        --values values.dev.yaml \
-        --path helm \
+        argocd app set nkp-pr-${{github.event.number}} \
         --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
         --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
-        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }} \
-        --helm-set namespace=nkp-pr-${{ github.event.number }} \
-        --helm-set ingress.domain="${{ steps.generate-ingress-domain.outputs.domain }}" \
-        --self-heal \
-        --sync-option 'CreateNamespace=true' \
-        --sync-policy auto \
-        --upsert \
-        --auto-prune
+        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }}
 
     - name: Comment on Pull Request
       uses: thollander/actions-comment-pull-request@v2
       if: steps.generate-ingress-domain.outputs.domain
       with:
         message: |
-          Preview URL :rocket: https://${{ steps.generate-ingress-domain.outputs.domain }}
-          Argo CD URL: https://${{ secrets.ARGOCD_HOSTNAME }}/applications/argocd/nkp-pr-${{github.event.number}}
-          Container Image URL: ${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews:${{ github.event.pull_request.head.sha }}
+          :rocket: Preview URL: https://${{ steps.generate-ingress-domain.outputs.domain }}
+          :octopus: Argo CD URL: https://${{ secrets.ARGOCD_HOSTNAME }}/applications/argocd/nkp-pr-${{github.event.number}}
         # Comment tag allows the action to update an existing comment, if one
         # exists. This prevents a flood of similar comments
         comment_tag: preview-url
