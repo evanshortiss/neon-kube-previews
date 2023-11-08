@@ -7,41 +7,10 @@ on:
       - '*'
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      build-and-deploy: ${{ steps.evaluate.outputs.build-and-deploy }}
-    
-    steps:
-      - name: Log Event
-        run: echo "${{ toJson(github.event) }}"
-
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            elements-application:
-              - 'elements-application/**'
-
-      - name: Set Deployment Requirement
-        id: evaluate
-        # Always do a full build if the PR is newly opened, or the app 
-        # source was modified, or this run is due to dispatch
-        run: |
-          echo "steps.changes.outputs.elements-application: ${{steps.changes.outputs.elements-application}}"
-          echo "github.event.action == 'opened': ${{github.event.action == 'opened'}}"
-          echo "github.event.action == 'reopened': ${{github.event.action == 'reopened'}}"
-          echo "github.event_name == 'workflow_dispatch': ${{github.event_name == 'workflow_dispatch'}}"
-          echo "build-and-deploy=${{ steps.changes.outputs.elements-application == 'true' || github.event.action == 'opened' || github.event.action == 'reopened' || github.event_name == 'workflow_dispatch' }}" >> "$GITHUB_OUTPUT"
-
   build-container:
     runs-on: ubuntu-latest
     needs: changes
 
-    # Only build the container image if the application source has changed,
-    # or a build is explicitly requested via a dispatch event
-    if: needs.changes.outputs.build-and-deploy == 'true'
     steps:
     - name: Checkout source code
       uses: actions/checkout@v3
@@ -65,11 +34,6 @@ jobs:
 
     # Wait for the docker build and push to complete prior to running this job
     needs: build-container
-
-    # Only push changes to Argo CD and the PR comment if necessary. If the
-    # application code has not changed, simply skip this step since Argo CD
-    # will fetch the new Kubernetes manifests in helm/ automatically
-    if: needs.changes.outputs.build-and-deploy == 'true'
 
     # This permission is required to comment with the preview URL on the PR
     permissions: 
