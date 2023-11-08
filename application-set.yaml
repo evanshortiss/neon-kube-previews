@@ -13,7 +13,7 @@ spec:
         # labels:
         #  - preview
       # Check the repository for PRs every 60 seconds
-      requeueAfterSeconds: 60
+      # requeueAfterSeconds: 60
   template:
     metadata:
       name: 'nkp-pr-{{number}}'

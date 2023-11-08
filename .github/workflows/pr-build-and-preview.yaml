@@ -1,6 +1,7 @@
 name: Build Container Image and Preview Environment
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - '*'
