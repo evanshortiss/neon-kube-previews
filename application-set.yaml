@@ -4,6 +4,11 @@ metadata:
   name: nkp-previews
   namespace: argocd
 spec:
+  # We need to tell Argo CD to ignore differences/drift in the Application's
+  # Helm values. This is because our GitHub Ations CI pipeline will override
+  # the container image values, and database url with a Neon preview branch.
+  # If we didn't explicitly ignore those changes, Argo CD would wipe them away,
+  # as you'd want it to under normal circumstances!
   ignoreApplicationDifferences:
     - jqPathExpressions:
         - .spec.source.helm.values
@@ -15,12 +20,10 @@ spec:
         # Optional. Only create previews for a PR with the given label(s)
         # labels:
         #  - preview
-      # Check the repository for PRs every 60 seconds
-      # requeueAfterSeconds: 60
-  syncPolicy:
-    # Don't override the settings applied by GH Actions CI post-creation
-    # of the Argo CD Application for the PR
-    applicationsSync: create-only
+  # syncPolicy:
+  #   # Don't override the settings applied by GH Actions CI post-creation
+  #   # of the Argo CD Application for the PR
+  #   applicationsSync: create-only
   template:
     metadata:
       name: 'nkp-pr-{{number}}'
@@ -50,8 +53,8 @@ spec:
       project: default
       syncPolicy:
         automated:
-          prune: false
-          selfHeal: false
+          prune: true
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
       destination:
