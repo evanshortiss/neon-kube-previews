@@ -14,6 +14,10 @@ spec:
         #  - preview
       # Check the repository for PRs every 60 seconds
       # requeueAfterSeconds: 60
+  syncPolicy:
+    # Don't override the settings applied by GH Actions CI post-creation
+    # of the Argo CD Application for the PR
+    applicationsSync: create-only
   template:
     metadata:
       name: 'nkp-pr-{{number}}'
