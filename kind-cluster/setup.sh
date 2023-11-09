@@ -60,6 +60,7 @@ echo "Configuring Argo CD..."
 kubectl patch configmap argocd-cm -n argocd --patch "$(cat argocd-cm.patch.yaml)" >> $LOG_FILE
 kubectl patch configmap argocd-cmd-params-cm -n argocd --type merge -p '{"data": {"server.insecure": "true"}}' >> $LOG_FILE
 kubectl patch secret argocd-secret -n argocd --type='json' -p='[{"op": "add", "path": "/stringData", "value": {"webhook.github.secret": "'"$WEBHOOK_SECRET"'"}}]' >> $LOG_FILE
+kubectl apply -f application-set.yaml >> $LOG_FILE
 kubectl rollout restart deployment/argocd-server -n argocd >> $LOG_FILE
 
 # Install ngrok ingress controller and...

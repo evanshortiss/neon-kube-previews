@@ -30,6 +30,10 @@ _Note: If you're using an unpaid ngrok account, go to **Cloud Edge > Domains** a
 ```bash
 cd kind-cluster/
 
+# Edit the "owner" and "repoURL" fields to match your GitHub org/username
+vi application-set.yaml
+
+# Run the setup script with your NGROK credentials
 NGROK_API_KEY="api-key-goes-here" \
 NGROK_AUTHTOKEN="authtoken_goes_here" \
 NGROK_ARGOCD_HOSTNAME="argocd.$USER.ngrok.app" \
