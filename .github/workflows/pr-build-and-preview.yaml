@@ -106,9 +106,9 @@ jobs:
     - name: Update the Preview Environment with the Neon Branch URL
       run: |
         argocd app set nkp-pr-${{github.event.number}} \
-        --helm-set database.url=${{ steps.create-branch.outputs.db_url }} \
-        --helm-set deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
-        --helm-set deployment.image.tag=${{ github.event.pull_request.head.sha }}
+        --parameter database.url=${{ steps.create-branch.outputs.db_url }} \
+        --parameter deployment.image.repository=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/neon-kube-previews \
+        --parameter deployment.image.tag=${{ github.event.pull_request.head.sha }}
 
     - name: Comment on Pull Request
       uses: thollander/actions-comment-pull-request@v2

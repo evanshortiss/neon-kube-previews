@@ -4,14 +4,6 @@ metadata:
   name: nkp-previews
   namespace: argocd
 spec:
-  # We need to tell Argo CD to ignore differences/drift in the Application's
-  # Helm values. This is because our GitHub Ations CI pipeline will override
-  # the container image values, and database url with a Neon preview branch.
-  # If we didn't explicitly ignore those changes, Argo CD would wipe them away,
-  # as you'd want it to under normal circumstances!
-  ignoreApplicationDifferences:
-    - jqPathExpressions:
-        - .spec.source.helm.values
   generators:
   - pullRequest:
       github:
@@ -20,10 +12,20 @@ spec:
         # Optional. Only create previews for a PR with the given label(s)
         # labels:
         #  - preview
-  # syncPolicy:
-  #   # Don't override the settings applied by GH Actions CI post-creation
-  #   # of the Argo CD Application for the PR
-  #   applicationsSync: create-only
+  # Don't override the settings applied by GH Actions CI post-creation
+  # of the Argo CD Application for the PR. This should not be necessary
+  # once https://github.com/argoproj/argo-cd/pull/14743 lands in stable.
+  # After that PR lands, ignoreApplicationDifferences should be sufficient
+  syncPolicy:
+    applicationsSync: create-delete
+  # We need to tell Argo CD to ignore differences/drift in the Application's
+  # Helm values. This is because our GitHub Ations CI pipeline will override
+  # the container image values, and database url with a Neon preview branch.
+  # If we didn't explicitly ignore those changes, Argo CD would wipe them away,
+  # as you'd want it to under normal circumstances!
+  ignoreApplicationDifferences:
+  - jqPathExpressions:
+    - .spec.source.helm.parameters
   template:
     metadata:
       name: 'nkp-pr-{{number}}'
@@ -39,22 +41,16 @@ spec:
           # Neon preview branch. Replace ingress.domain with your desired
           # hostname. Previews use the following URL structure:
           # nkp-pr-{{number}}.{{ingress.domain}}
-          values: >-
-            {
-              deployment: {
-                image: {
-                  tag: {{head_sha}}
-                }
-              },
-              ingress: {
-                domain: "pr-{{number}}.nkp.ngrok.app"
-              }
-            }
+          parameters:
+          - name: deployment.image.tag
+            value: "{{head_sha}}"
+          - name: ingress.domain
+            value: "pr-{{number}}.nkp.ngrok.app"
       project: default
       syncPolicy:
         automated:
           prune: true
-          selfHeal: true
+          selfHeal: false
         syncOptions:
           - CreateNamespace=true
       destination:
