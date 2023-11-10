@@ -6,6 +6,8 @@ deployment:
   image:
     repository: evanshortiss/neon-kube-previews
     pullPolicy: Always
+    # Fixed container image tag. Update this to rollout a new version of the
+    # elements application to the production environment
     tag: 8fb8866310dbaad7c117c81b98cac99913b9e45e
   resources:
     limits:
@@ -17,8 +19,8 @@ deployment:
       memory: 512Mi
 service:
   port: 80
-ingress:
-  domain: neon-kube-previews.ngrok.app
+ingress: {}
 labels:
   app: neon-kube-previews
   environment: "production"
+database: {}
