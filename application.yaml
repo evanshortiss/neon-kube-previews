@@ -1,3 +1,5 @@
+# This file defines the production version of the elements application.
+# It is synchronised against the main branch of the repository.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -13,11 +15,12 @@ spec:
     targetRevision: HEAD
     helm:
       valueFiles:
-        - values.yaml
-      values: >-
-        { database: { url:
-        "$DATABASE_URL"
-        } }
+      - values.yaml
+      values:
+        ingress:
+          # Change this to a domain you control, and update the ingresss.yaml
+          # to work with your ingress controller of choice
+          domain: "foo.bar"
   sources: []
   project: default
   syncPolicy:
