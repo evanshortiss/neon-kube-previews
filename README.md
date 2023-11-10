@@ -1,8 +1,8 @@
 # Kube Preview Environments with Neon Database
 
-This sample project demonstrates how to create cotinuous integration pipeline
+This sample project demonstrates how to create continuous integration pipeline
 that creates a Neon branch and preview environment for every pull request.
-These preview environments are deployed into a Kubernetes cluster, and are
+These preview environments are deployed into a Kubernetes cluster and are
 kept in sync with the pull request using Argo CD.
 
 ![Architecture Overview](/images/architecture.png)
