@@ -40,12 +40,6 @@ jobs:
 
     steps:
 
-    # The current branch is passed to Argo CD to ensure the correct manifests
-    # are used when deploying the application on Kubernetes
-    - name: Get branch name
-      id: branch-name
-      uses: tj-actions/branch-names@v7
-
     # Create a new branch on Neon using the PR number in the branch name. This
     # operation is idempotent, so it's effectively a no-op if more commits are
     # push to the original PR
