@@ -16,11 +16,16 @@ spec:
     helm:
       valueFiles:
       - values.yaml
-      values:
-        ingress:
-          # Change this to a domain you control, and update the ingresss.yaml
-          # to work with your ingress controller of choice
-          domain: "foo.bar"
+      parameters:
+      - name: ingress.domain
+        # Change this to a domain you control, and update the ingresss.yaml
+        # to work with your ingress controller of choice
+        value: "neon-kube-previews.ngrok.app"
+      - name: database.url
+        # Change this to your database URL. In production, use sealed secrets
+        # or a similar secure method for managing this instead of storing in
+        # the Argo CD application defintion!
+        value: postgresql://user:pass@host/neondb?sslmode=require
   sources: []
   project: default
   syncPolicy:
